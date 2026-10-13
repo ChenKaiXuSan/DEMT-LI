@@ -5,13 +5,12 @@ The three networks in this directory (``Time_series_seq2seq_4DCT_voxelmorph.py``
 with ``ConvLSTMCell3d.py``, ``layers.py`` and ``unet_utils.py``) are the original,
 unmodified implementation, so saved checkpoints and numerical behaviour are preserved.
 
-CT input (``ct_input``, default from ``configs/config.yaml``):
-* ``"reference"``: the 3D encoder receives only the 50% reference CT; the 70/90% CT
-  volumes are used solely as training targets and for scoring.
-* ``"sequence"`` (used for the reported results): the 3D encoder receives the complete
-  three-phase CT sequence (50%, 70%, 90%) during training *and* evaluation, so the
-  target volumes are also network inputs.
-In both modes the spatial transformer warps only the 50% CT.
+CT input protocol (Fig. 6 of the manuscript; ``configs/config.yaml``):
+* training, including internal validation for checkpoint selection: the 3D encoder
+  receives the time-series CT volumes (50%, 70%, 90%) together with the 2D frames;
+* testing: the trained model receives only the Phase 1 (50%) CT volume together with
+  the time-series 2D frames.
+The predicted DVFs always warp the Phase 1 (50%) CT.
 """
 from __future__ import annotations
 
@@ -28,8 +27,9 @@ from torch.utils.checkpoint import checkpoint
 from ..dataloader.protocol import METHODS
 from ..utils.config import load_config
 
-CT_INPUTS = ("reference", "sequence")
-DEFAULT_CT_INPUT = load_config()["ct_input"]
+CT_INPUTS = ("reference", "sequence")  # Phase 1 CT only / 50-70-90% CT sequence
+TRAIN_CT_INPUT = load_config()["train_ct_input"]
+TEST_CT_INPUT = load_config()["test_ct_input"]
 MODELS = Path(__file__).resolve().parent
 SOURCES = {
     "image_2d": MODELS / "Time_series_seq2seq_4DCT_voxelmorph.py",
@@ -38,17 +38,17 @@ SOURCES = {
 }
 
 
-def settings(method, ct_input=DEFAULT_CT_INPUT):
+def settings(method):
     """Flattened training configuration for one method (from ``configs/config.yaml``)."""
-    if method not in METHODS or ct_input not in CT_INPUTS:
-        raise ValueError((method, ct_input))
+    if method not in METHODS or {TRAIN_CT_INPUT, TEST_CT_INPUT} - set(CT_INPUTS):
+        raise ValueError((method, TRAIN_CT_INPUT, TEST_CT_INPUT))
     config = load_config()
     return dict(**config["methods"][method], **config["optimizer"],
                 scheduler=dict(config["scheduler"]), epochs=config["epochs"],
                 batch_size=config["batch_size"], channels=config["channels"], seed=config["seed"],
-                lambda_smooth=config["lambda_smooth"], early_stopping=False, ct_input=ct_input,
-                encoder_ct=("50/70/90% CT sequence" if ct_input == "sequence" else "50% CT only"),
-                warped_volume="first phase (50%) only")
+                lambda_smooth=config["lambda_smooth"], early_stopping=False,
+                train_ct_input=TRAIN_CT_INPUT, test_ct_input=TEST_CT_INPUT,
+                warped_volume="Phase 1 (50%) CT")
 
 
 class Recompute(nn.Module):
@@ -93,8 +93,8 @@ def make_optimizer(model, method):
     return optimizer, torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, **config["scheduler"])
 
 
-def tensors(case, device, method, training=False, ct_input=DEFAULT_CT_INPUT):
-    """Return (ct, surrogate, rpm, target); ct is (1,3,1,D,H,W), or (1,1,1,D,H,W) for "reference"."""
+def tensors(case, device, method, training=False, ct_input=TEST_CT_INPUT):
+    """Return (ct, surrogate, rpm, target); ct is (1,3,1,D,H,W) for "sequence", (1,1,1,D,H,W) for "reference"."""
     if ct_input not in CT_INPUTS:
         raise ValueError(ct_input)
     target = torch.from_numpy(case["target"])[None, None].to(device)
@@ -140,12 +140,6 @@ def predict(model, method, ct, surrogate=None, rpm=None):
 def load_checkpoint(path):
     with torch.serialization.safe_globals([torch.torch_version.TorchVersion]):
         return torch.load(path, map_location="cpu", weights_only=True)
-
-
-def checkpoint_ct_input(checkpoint):
-    """CT input mode a checkpoint was trained with; checkpoints without the field are the
-    reported runs, which were trained with the full sequence."""
-    return checkpoint.get("config", {}).get("ct_input", "sequence")
 
 
 def deterministic(seed=42, threads=2):

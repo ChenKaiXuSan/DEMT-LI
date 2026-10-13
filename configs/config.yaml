@@ -1,11 +1,11 @@
 # Training configuration (values used for the reported experiments unless noted).
-# Command-line options of project/train.py and project/main.py override epochs and ct_input.
+# The --epochs option of project/train.py and project/main.py overrides epochs.
 
-# CT volumes given to the 3D encoder:
-#   reference - only the 50% reference CT (default for this release)
-#   sequence  - the 50/70/90% CT sequence; the reported results were obtained with this mode
-# In both modes the predicted DVFs warp only the 50% CT.
-ct_input: reference
+# CT volumes given to the 3D encoder (Fig. 6): "sequence" = 50/70/90% CT, "reference" = Phase 1 CT.
+# Training and internal validation use the sequence; testing uses the Phase 1 CT only.
+# The predicted DVFs always warp the Phase 1 (50%) CT.
+train_ct_input: sequence
+test_ct_input: reference
 
 epochs: 200
 batch_size: 1

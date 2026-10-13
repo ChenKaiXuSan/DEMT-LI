@@ -13,6 +13,9 @@ validated for cine-MRI, clinical tumour localization or end-to-end MR-linac use.
 
 ## Protocol
 
+* **Inputs (Fig. 6).** During training, the model receives the time-series 3D CT volumes
+  (50%, 70%, 90%) and the corresponding coronal 2D frames. At test time it receives only the
+  Phase 1 (50%) CT volume and the time-series 2D frames. The predicted DVFs warp the Phase 1 CT.
 * **Cross-validation.** Six outer patient-level folds with a 4–1–1 split. Fold *i*
   tests patient *i*, uses patient *i* mod 6 + 1 for internal validation and trains on
   the remaining four. All methods share the same splits. The internal-validation loss
@@ -47,7 +50,7 @@ python -m pytest -q test
 ```
 
 The reported runs used an NVIDIA RTX 3090 (24 GB), PyTorch 2.12.0 and CUDA 13.0.
-In `sequence` mode, one training job needs about 12 GB of GPU memory and roughly 1.6 h
+One training job needs about 12 GB of GPU memory and roughly 1.6 h
 for 200 epochs.
 
 ## Data
@@ -86,8 +89,8 @@ for 200 epochs.
 
 | Paper item | Command |
 | --- | --- |
-| Training, 3 methods × 6 folds, then Tables II–III | `python -m project.main --data data/inputs --output runs/main --gpus 0 1 2 3 [--ct-input sequence]` |
-| One fold | `python -m project.train --method image_2d --fold 1 --data data/inputs --output runs/main [--ct-input sequence]` |
+| Training, 3 methods × 6 folds, then Tables II–III | `python -m project.main --data data/inputs --output runs/main --gpus 0 1 2 3` |
+| One fold | `python -m project.train --method image_2d --fold 1 --data data/inputs --output runs/main` |
 | Tables II–III, Fig. 10 (image fidelity and paired tests) | `python -m project.evaluation.summarize --run runs/main --data data/inputs` |
 | Figs. 12–14 (Experiment 2, regional-input sensitivity) | `python -m project.evaluation.regional_input --run runs/main --data data/inputs --output results/regional_input` |
 | Tables V–VI, Figs. 20–22 (DVF plausibility, landmark TRE, resolution) | `python -m project.evaluation.auxiliary --run runs/main --popi-root data/popi --dicom-cache data/inputs/dicom --output results/auxiliary` |
@@ -98,26 +101,10 @@ Each fold directory contains `config.json`, `epochs.jsonl`, `best.pt`, `last.pt`
 `selection.json` and `test_prediction.npz` (the prediction plus the DVF of the held-out
 patient).
 
-### Reported image-fidelity results (`--ct-input sequence`; patient-level mean ± SD, n = 6)
-
-| Method | SSIM | PSNR (dB) | MAE (HU) |
-| --- | --- | --- | --- |
-| No surrogate | 0.8984 ± 0.0408 | 35.61 ± 2.07 | 32.13 ± 8.54 |
-| 1D RPM surrogate | 0.8942 ± 0.0423 | 34.99 ± 2.07 | 34.94 ± 9.86 |
-| DEMT-LI (2D image surrogate) | 0.9445 ± 0.0284 | 39.86 ± 2.16 | 21.14 ± 4.98 |
-
-Reproducibility: loading the reported checkpoints with this code reproduces the saved
-predictions and DVFs exactly. A 3-epoch retraining check against the reported run
-matched the initial validation loss, patient order and learning rate exactly. Loss
-values differed at about the 1e-5 relative level, the same size as the difference
-between two repeated runs of this code. The cause is that some CUDA backward kernels
-(`grid_sample`, trilinear upsampling) are not bitwise deterministic, so retrained
-weights will not be bit-identical to the reported checkpoints.
-
 ## Repository layout
 
 ```
-configs/config.yaml        training hyper-parameters and default ct_input
+configs/config.yaml        training hyper-parameters and CT input protocol
 images/                    architecture figure
 project/
   main.py                  all folds and methods (multi-GPU), then summary

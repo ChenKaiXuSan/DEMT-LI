@@ -2,8 +2,7 @@ import numpy as np
 import pytest
 import torch
 
-from project.models.network import (DEFAULT_CT_INPUT, build_model, checkpoint_ct_input, predict, settings,
-                             tensors)
+from project.models.network import TEST_CT_INPUT, TRAIN_CT_INPUT, build_model, predict, settings, tensors
 
 
 @pytest.mark.parametrize("method", ["image_2d", "rpm_1d", "no_surrogate"])
@@ -37,16 +36,13 @@ def test_reference_only_forward(method):
     assert flow.shape == (1, 3, 3, size, size, size)
 
 
-def test_ct_input_modes():
+def test_ct_input_protocol():
     case = dict(target=np.random.default_rng(0).normal(size=(3, 8, 8, 8)).astype(np.float32),
                 surrogate=np.zeros((3, 3, 8, 8), np.float32), rpm=np.zeros(3, np.float32))
-    reference, _, _, target = tensors(case, "cpu", "image_2d")  # default is reference-only
-    sequence = tensors(case, "cpu", "image_2d", ct_input="sequence")[0]
-    assert DEFAULT_CT_INPUT == "reference" and settings("image_2d")["ct_input"] == "reference"
+    assert (TRAIN_CT_INPUT, TEST_CT_INPUT) == ("sequence", "reference")
+    config = settings("image_2d")
+    assert (config["train_ct_input"], config["test_ct_input"]) == ("sequence", "reference")
+    reference, _, _, target = tensors(case, "cpu", "image_2d")  # default: test protocol
+    sequence = tensors(case, "cpu", "image_2d", training=True, ct_input=TRAIN_CT_INPUT)[0]
     assert reference.shape == (1, 1, 1, 8, 8, 8) and sequence.shape == (1, 3, 1, 8, 8, 8)
     assert torch.equal(reference[0, 0, 0], target[0, 0, 0]) and torch.equal(sequence[0, 2, 0], target[0, 0, 2])
-
-
-def test_checkpoints_without_mode_are_sequence():
-    assert checkpoint_ct_input(dict(config={})) == "sequence"
-    assert checkpoint_ct_input(dict(config=dict(ct_input="reference"))) == "reference"
