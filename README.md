@@ -79,7 +79,7 @@ for 200 epochs.
    * A 6 × 10 CSV of diaphragm-apex positions: one row per patient, one column per
      phase from 0% to 90% (the 1D surrogate).
 
-   > TODO before release: state where these 18 PNGs and the CSV can be obtained.
+   These surrogate inputs are not distributed with this repository.
 
 3. **Build the model inputs.**
 
@@ -163,4 +163,11 @@ The deformation backbone follows RMSim (D. Lee et al., *Phys. Med. Biol.* 68:045
 38:1788–1800, 2019). The data come from the POPI-model (J. Vandemeulebroucke et al.,
 ICCR 2007).
 
-> TODO before release: add the license and citation.
+## License
+
+The network code in `project/models/` (`ConvLSTMCell3d.py`, `layers.py`,
+`unet_utils.py` and the three model files) is derived from
+[SeqX2Y / RMSim](https://github.com/nadeemlab/SeqX2Y) (Nadeem Lab, Memorial Sloan
+Kettering Cancer Center). SeqX2Y is distributed under the Apache 2.0 license with the
+Commons Clause and is available for non-commercial academic purposes. This repository
+is distributed under the same terms.
