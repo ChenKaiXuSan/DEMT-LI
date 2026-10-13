@@ -1,6 +1,6 @@
 import pytest
 
-from demt_li.protocol import folds, validate_fold
+from project.dataloader.protocol import folds, validate_fold
 
 
 def test_six_disjoint_patient_level_folds():

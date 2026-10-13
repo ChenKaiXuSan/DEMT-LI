@@ -1,6 +1,6 @@
 import numpy as np
 
-from demt_li.metrics import exact_signflip, holm, image_metrics, paired_statistics
+from project.utils.metrics import exact_signflip, holm, image_metrics, paired_statistics
 
 
 def test_six_concordant_patients_give_minimum_exact_p():

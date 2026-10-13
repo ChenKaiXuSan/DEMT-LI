@@ -3,7 +3,7 @@
 FP32, batch size 1, one jointly generated three-phase sequence per forward pass;
 10 warm-up runs, then 100 runs with CUDA synchronization before and after each pass.
 Data loading, host-device transfer, pre/post-processing and I/O are excluded. The
-input includes the full three-phase CT sequence, as in the reported evaluation.
+CT input (reference-only or full sequence) follows the checkpoint's training configuration.
 """
 from __future__ import annotations
 
@@ -16,8 +16,9 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from .network import build_model, deterministic, load_checkpoint, predict, tensors
-from .protocol import load_cases
+from ..models.network import (build_model, checkpoint_ct_input, deterministic, load_checkpoint, predict,
+                      tensors)
+from ..dataloader.protocol import load_cases
 
 
 def main():
@@ -31,10 +32,12 @@ def main():
     deterministic()
     device = torch.device(args.device)
     model = build_model("image_2d")
-    model.load_state_dict(load_checkpoint(args.checkpoint)["model"], strict=True)
+    checkpoint = load_checkpoint(args.checkpoint)
+    ct_input = checkpoint_ct_input(checkpoint)
+    model.load_state_dict(checkpoint["model"], strict=True)
     model.to(device).eval().requires_grad_(False)
     case = load_cases(args.data, [args.patient])[args.patient]
-    ct, surrogate, rpm, _ = tensors(case, device, "image_2d")
+    ct, surrogate, rpm, _ = tensors(case, device, "image_2d", ct_input=ct_input)
     times = []
     with torch.inference_mode():
         for _ in range(10):
@@ -55,7 +58,8 @@ def main():
                   peak_reserved_gib=torch.cuda.max_memory_reserved() / 1024 ** 3,
                   parameters=sum(p.numel() for p in model.parameters()),
                   python=platform.python_version(), torch=torch.__version__, cuda=torch.version.cuda,
-                  gpu=torch.cuda.get_device_name(device), ct_input_shape=list(ct.shape),
+                  gpu=torch.cuda.get_device_name(device), ct_input=ct_input,
+                  ct_input_shape=list(ct.shape),
                   warmup=10, repetitions=100, precision="FP32", samples_ms=times)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2) + "\n")

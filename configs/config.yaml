@@ -1,0 +1,38 @@
+# Training configuration (values used for the reported experiments unless noted).
+# Command-line options of project/train.py and project/main.py override epochs and ct_input.
+
+# CT volumes given to the 3D encoder:
+#   reference - only the 50% reference CT (default for this release)
+#   sequence  - the 50/70/90% CT sequence; the reported results were obtained with this mode
+# In both modes the predicted DVFs warp only the 50% CT.
+ct_input: reference
+
+epochs: 200
+batch_size: 1
+channels: 96            # ConvLSTM3D feature channels
+seed: 42
+lambda_smooth: 1.0      # weight of the spatial DVF-gradient term in the loss
+
+optimizer:              # Adam
+  betas: [0.9, 0.999]
+  eps: 1.0e-8
+  weight_decay: 0.0
+
+scheduler:              # ReduceLROnPlateau on internal-validation loss / initial value
+  factor: 0.1
+  patience: 10
+  threshold: 1.0e-4
+
+methods:
+  image_2d:             # DEMT-LI, 2D coronal image surrogate
+    lr: 1.0e-3
+    shuffle: true       # patient order shuffled each epoch
+    per_axial_slice_flip_probability: 0.0
+  rpm_1d:               # 1D diaphragm-position surrogate
+    lr: 1.0e-3
+    shuffle: true
+    per_axial_slice_flip_probability: 0.0
+  no_surrogate:
+    lr: 1.0e-4
+    shuffle: false
+    per_axial_slice_flip_probability: 0.5   # random horizontal flip of each axial slice

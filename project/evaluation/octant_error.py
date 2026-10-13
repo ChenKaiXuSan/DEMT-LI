@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from .protocol import PHASES, folds
+from ..dataloader.protocol import PHASES, folds
 from .summarize import load_prediction, load_target
 
 

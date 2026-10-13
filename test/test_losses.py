@@ -1,6 +1,6 @@
 import torch
 
-from demt_li.losses import dvf_smoothness, objective
+from project.models.losses import dvf_smoothness, objective
 
 
 def test_constant_field_has_zero_smoothness():

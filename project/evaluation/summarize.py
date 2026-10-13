@@ -13,8 +13,8 @@ from pathlib import Path
 
 import numpy as np
 
-from .metrics import image_metrics, paired_statistics, patient_summary
-from .protocol import METHODS, PATIENTS, PHASES, folds
+from ..utils.metrics import image_metrics, paired_statistics, patient_summary
+from ..dataloader.protocol import METHODS, PATIENTS, PHASES, folds
 
 
 def write_csv(path, rows):

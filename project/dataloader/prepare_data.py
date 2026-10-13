@@ -18,7 +18,7 @@ from .protocol import PATIENTS, PHASES, folds, save_json, sha256
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--popi-root", type=Path, required=True,
-                        help="directory created by `python -m demt_li.popi --output ...`")
+                        help="directory created by `python -m project.dataloader.popi --output ...`")
     parser.add_argument("--png-root", type=Path, required=True,
                         help="contains 2DCT-<patient>/<phase>.png coronal surrogate frames")
     parser.add_argument("--rpm-csv", type=Path, required=True,

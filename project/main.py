@@ -9,7 +9,9 @@ import sys
 import threading
 from pathlib import Path
 
-from .protocol import METHODS, folds
+from .models.network import CT_INPUTS, DEFAULT_CT_INPUT
+from .dataloader.protocol import METHODS, folds
+from .utils.config import load_config
 
 
 def main():
@@ -17,7 +19,8 @@ def main():
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--gpus", nargs="+", default=["0"])
-    parser.add_argument("--epochs", type=int, default=200)
+    parser.add_argument("--epochs", type=int, default=load_config()["epochs"])
+    parser.add_argument("--ct-input", choices=CT_INPUTS, default=DEFAULT_CT_INPUT)
     args = parser.parse_args()
     (args.output / "logs").mkdir(parents=True, exist_ok=True)
     jobs = queue.Queue()
@@ -32,9 +35,9 @@ def main():
                 method, fold = jobs.get_nowait()
             except queue.Empty:
                 return
-            command = [sys.executable, "-m", "demt_li.train", "--method", method, "--fold", str(fold),
+            command = [sys.executable, "-m", "project.train", "--method", method, "--fold", str(fold),
                        "--data", str(args.data), "--output", str(args.output),
-                       "--epochs", str(args.epochs)]
+                       "--epochs", str(args.epochs), "--ct-input", args.ct_input]
             log = args.output / "logs" / f"{method}_fold_{fold:02d}.log"
             print(f"GPU {gpu}: {method} fold {fold}", flush=True)
             with log.open("w") as stream:
@@ -51,7 +54,7 @@ def main():
         thread.join()
     if failures:
         raise SystemExit(f"{len(failures)} job(s) failed: {failures}")
-    subprocess.check_call([sys.executable, "-m", "demt_li.summarize", "--run", str(args.output),
+    subprocess.check_call([sys.executable, "-m", "project.evaluation.summarize", "--run", str(args.output),
                            "--data", str(args.data)])
 
 

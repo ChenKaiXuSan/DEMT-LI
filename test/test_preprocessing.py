@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from PIL import Image
 
-from demt_li.preprocessing import load_png_sequence, preprocess_ct_slice, read_rpm
-from demt_li.regional_input import CONDITIONS, regional_input
+from project.dataloader.preprocessing import load_png_sequence, preprocess_ct_slice, read_rpm
+from project.evaluation.regional_input import CONDITIONS, regional_input
 
 
 def test_ct_slice_crop_and_resize():

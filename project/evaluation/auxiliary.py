@@ -23,10 +23,10 @@ from scipy.ndimage import map_coordinates
 from skimage.metrics import structural_similarity
 from skimage.transform import resize
 
-from . import popi
-from .metrics import paired_statistics
-from .preprocessing import CROP_COLUMNS, CROP_ROWS, SIZE, SKIP_SLICES
-from .protocol import METHODS, PHASES, folds
+from ..dataloader import popi
+from ..utils.metrics import paired_statistics
+from ..dataloader.preprocessing import CROP_COLUMNS, CROP_ROWS, SIZE, SKIP_SLICES
+from ..dataloader.protocol import METHODS, PHASES, folds
 from .summarize import load_prediction
 
 DVF_METRICS = ("folding_fraction", "jacobian_p01", "jacobian_median", "jacobian_p99",

@@ -3,7 +3,8 @@
 For each held-out patient the frozen DEMT-LI checkpoint of that fold is reused
 without retraining. Each coronal frame is min-max rescaled to [0, 1] over the whole
 frame, one region (half, quadrant or 4x4 cell) is cropped and resized back to
-128 x 128 (bilinear, antialiased), and the same region is used for all phases.
+128 x 128 (bilinear, antialiased), and the same region is used for all phases. The CT
+input mode follows the checkpoint's training configuration.
 Scores are computed on whole reconstructed volumes. This is an input-sensitivity
 analysis, not an attention or attribution method.
 """
@@ -17,9 +18,10 @@ import numpy as np
 import torch
 from torch.nn.functional import interpolate
 
-from .metrics import METRICS, image_metrics
-from .network import build_model, deterministic, load_checkpoint, predict, tensors
-from .protocol import PATIENTS, PHASES, load_cases
+from ..utils.metrics import METRICS, image_metrics
+from ..models.network import (build_model, checkpoint_ct_input, deterministic, load_checkpoint, predict,
+                      tensors)
+from ..dataloader.protocol import PATIENTS, PHASES, load_cases
 
 CONDITIONS = (["full", "left", "right", "upper", "lower"] + [f"grid2_{i}" for i in range(1, 5)]
               + [f"grid4_{i}" for i in range(1, 17)])
@@ -80,7 +82,7 @@ def main():
         model.load_state_dict(checkpoint["model"], strict=True)
         model.to(device).eval().requires_grad_(False)
         case = load_cases(args.data, [patient])[patient]
-        ct, _, rpm, _ = tensors(case, device, "image_2d")
+        ct, _, rpm, _ = tensors(case, device, "image_2d", ct_input=checkpoint_ct_input(checkpoint))
         with torch.inference_mode():
             for condition in CONDITIONS:
                 surrogate = torch.from_numpy(regional_input(case["surrogate"], condition))[None].to(device)

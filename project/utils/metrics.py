@@ -6,7 +6,7 @@ from itertools import product
 import numpy as np
 from skimage.metrics import structural_similarity
 
-from .protocol import METHODS, PHASES
+from ..dataloader.protocol import METHODS, PHASES
 
 METRICS = ("ssim", "psnr_db", "mae_hu")
 PSNR_RANGE_HU = 4000.
