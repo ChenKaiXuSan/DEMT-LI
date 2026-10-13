@@ -26,11 +26,11 @@ validated for cine-MRI, clinical tumour localization or end-to-end MR-linac use.
   stopping.
 * **Method-specific settings, kept from the original implementations:**
 
-  | Method | Learning rate | Patient order | Augmentation |
-  | --- | --- | --- | --- |
-  | `image_2d` (DEMT-LI) | 1e-3 | shuffled each epoch | none |
-  | `rpm_1d` (1D diaphragm surrogate) | 1e-3 | shuffled each epoch | none |
-  | `no_surrogate` | 1e-4 | fixed | random horizontal flip of each axial slice (p = 0.5) |
+  | Method | Learning rate | Patient order |
+  | --- | --- | --- |
+  | `image_2d` (DEMT-LI) | 1e-3 | shuffled each epoch |
+  | `rpm_1d` (1D diaphragm surrogate) | 1e-3 | shuffled each epoch |
+  | `no_surrogate` | 1e-4 | fixed |
 
 * **2D surrogate frames.** The surrogate encoder sees frames 50/70% in the encoder
   pass and 70/90% in the decoder pass (`project/models/Time_series_seq2seq_4DCT_voxelmorph.py`).
