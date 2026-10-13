@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+# data, checkpoints and experiment outputs are never committed
+data/
+runs/
+results/
+*.npz
+*.pt
+*.nrrd
+*.dcm
+*.tar.gz
