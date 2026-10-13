@@ -11,20 +11,6 @@ DEMT-LI adds a sequential coronal 2D image-surrogate encoder to an RMSim-style
 study is a retrospective, CT-only proof of concept on six POPI 4D-CT cases. It is not
 validated for cine-MRI, clinical tumour localization or end-to-end MR-linac use.
 
-## CT input mode (`ct_input`)
-
-| Mode | 3D encoder input | Use |
-| --- | --- | --- |
-| `reference` (default) | the 50% reference CT only | reference-plus-2D-surrogate setting |
-| `sequence` | the 50/70/90% CT sequence, which includes the target phases | **used for the reported results** |
-
-In both modes the predicted DVFs warp only the 50% CT, and the 70/90% volumes are the
-training targets. The default comes from `configs/config.yaml` and can be changed per
-run with `--ct-input`. The results reported in the manuscript were obtained with
-`--ct-input sequence`; results for `reference` have not been produced yet. Evaluation
-scripts read the mode from each checkpoint. Checkpoints that do not record it are
-treated as `sequence`.
-
 ## Protocol
 
 * **Cross-validation.** Six outer patient-level folds with a 4–1–1 split. Fold *i*
